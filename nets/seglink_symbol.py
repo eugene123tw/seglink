@@ -1,17 +1,17 @@
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-import net_factory
+from nets import net_factory
 import config
 
 
 class SegLinkNet(object):
     def __init__(self, inputs, weight_decay = None, basenet_type = 'vgg', data_format = 'NHWC',  
                                 weights_initializer = None, biases_initializer = None):
-        self.inputs = inputs;
+        self.inputs = inputs
         self.weight_decay = weight_decay
         self.feat_layers = config.feat_layers
-        self.basenet_type = basenet_type;
-        self.data_format = data_format;
+        self.basenet_type = basenet_type
+        self.data_format = data_format
         if weights_initializer is None:
             weights_initializer = tf.contrib.layers.xavier_initializer()
         if biases_initializer is None:
@@ -19,8 +19,8 @@ class SegLinkNet(object):
         self.weights_initializer = weights_initializer
         self.biases_initializer = biases_initializer
         
-        self._build_network();
-        self.shapes = self.get_shapes();
+        self._build_network()
+        self.shapes = self.get_shapes()
     def get_shapes(self):
         shapes = {}
             
@@ -41,13 +41,13 @@ class SegLinkNet(object):
                                 padding='SAME',
                                 data_format = self.data_format):
                 with tf.variable_scope(self.basenet_type):
-                    basenet, end_points = net_factory.get_basenet(self.basenet_type, self.inputs);
+                    basenet, end_points = net_factory.get_basenet(self.basenet_type, self.inputs)
                     
                 with tf.variable_scope('extra_layers'):
-                    self.net, self.end_points = self._add_extra_layers(basenet, end_points);
+                    self.net, self.end_points = self._add_extra_layers(basenet, end_points)
                 
                 with tf.variable_scope('seglink_layers'):
-                    self._add_seglink_layers();
+                    self._add_seglink_layers()
         
     def _add_extra_layers(self, inputs, end_points):
         # Additional SSD blocks.
@@ -77,7 +77,7 @@ class SegLinkNet(object):
 #         net = tf.pad(net, paddings)
 #         net = slim.conv2d(net, 256, [4, 4], scope='conv10_2', padding='VALID')
 #         end_points['conv10_2'] = net
-        return net, end_points;    
+        return net, end_points    
     
     def _build_seg_link_layer(self, layer_name):
         net = self.end_points[layer_name]
@@ -107,7 +107,7 @@ class SegLinkNet(object):
     
             # cross-layer link scores
             num_cross_layer_link_scores_pred = 8
-            cross_layer_link_scores = None;
+            cross_layer_link_scores = None
             if layer_name != 'conv4_3':
                 cross_layer_link_scores = slim.conv2d(net, num_cross_layer_link_scores_pred, [3, 3], scope = 'cross_layer_link_scores')
                 cross_layer_link_scores = tf.reshape(cross_layer_link_scores, tensor_shape(cross_layer_link_scores)[:-1] + [4, 2])
@@ -183,7 +183,7 @@ class SegLinkNet(object):
         
         def OHNM_batch(neg_conf, pos_mask, neg_mask):
             selected_neg_mask = []
-            for image_idx in xrange(batch_size):
+            for image_idx in range(batch_size):
                 image_neg_conf = neg_conf[image_idx, :]
                 image_neg_mask = neg_mask[image_idx, :]
                 image_pos_mask = pos_mask[image_idx, :]
@@ -208,7 +208,7 @@ class SegLinkNet(object):
                     labels = tf.cast(seg_pos_mask, dtype = tf.int32))
                 return tf.reduce_sum(seg_cls_loss * seg_selected_mask) / n_seg_pos
             def no_pos():
-                return tf.constant(.0);
+                return tf.constant(.0)
             seg_cls_loss = tf.cond(n_seg_pos > 0, has_pos, no_pos)
             tf.add_to_collection(tf.GraphKeys.LOSSES, seg_cls_loss)
         
@@ -238,7 +238,7 @@ class SegLinkNet(object):
                 seg_loc_loss = control_flow_ops.with_dependencies(sub_loc_losses, seg_loc_loss)
                 return seg_loc_loss
             def no_pos():
-                return tf.constant(.0);
+                return tf.constant(.0)
             seg_loc_loss = tf.cond(n_seg_pos > 0, has_pos, no_pos)
             tf.add_to_collection(tf.GraphKeys.LOSSES, seg_loc_loss)
 
@@ -254,7 +254,7 @@ class SegLinkNet(object):
                     labels = tf.cast(link_pos_mask, tf.int32))
                 return tf.reduce_sum(link_cls_loss * link_selected_mask) / n_link_pos
             def no_pos():
-                return tf.constant(.0);
+                return tf.constant(.0)
             link_cls_loss = tf.cond(n_link_pos > 0, has_pos, no_pos) * config.link_cls_loss_weight
             tf.add_to_collection(tf.GraphKeys.LOSSES, link_cls_loss)
         
@@ -276,7 +276,7 @@ def reshape_and_concat(tensors):
             t = tf.reshape(t, [shape[0], -1, shape[-1]])
         else:
             raise ValueError("invalid tensor shape: %s, shape = %s"%(t.name, shape)) 
-        return t;
+        return t
     reshaped_tensors = [reshape(t) for t in tensors if t is not None]
     return tf.concat(reshaped_tensors, axis = 1)
     

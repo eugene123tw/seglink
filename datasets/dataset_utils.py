@@ -43,6 +43,10 @@ def bytes_feature(value):
     """
     if not isinstance(value, list):
         value = [value]
+
+    if not isinstance(value[0], bytes):
+        value = [str.encode(i) for i in value]
+
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
 
 

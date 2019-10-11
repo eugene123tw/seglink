@@ -39,6 +39,6 @@ def basenet(inputs):
         net = slim.conv2d(net, 1024, [1, 1], scope='fc7')
         end_points['fc7'] = net
 
-    return net, end_points;    
+    return net, end_points
 
 

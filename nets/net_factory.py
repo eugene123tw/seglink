@@ -1,9 +1,9 @@
-import vgg
+from nets import vgg
 
 net_dict = {
     "vgg": vgg
 }
 
 def get_basenet(name, inputs):
-    net = net_dict[name];
-    return net.basenet(inputs);
+    net = net_dict[name]
+    return net.basenet(inputs)

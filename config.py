@@ -100,7 +100,7 @@ def init_config(image_shape, batch_size = 1,
     from nets import seglink_symbol
     fake_image = tf.ones((1, h, w, 3))
     fake_net = seglink_symbol.SegLinkNet(inputs = fake_image, weight_decay = weight_decay)
-    feat_shapes = fake_net.get_shapes();
+    feat_shapes = fake_net.get_shapes()
     
     # the placement of the following lines are extremely important
     _set_image_shape(image_shape)
@@ -126,7 +126,7 @@ def init_config(image_shape, batch_size = 1,
     num_clones = len(gpus)
     
     global clone_scopes
-    clone_scopes = ['clone_%d'%(idx) for idx in xrange(num_clones)]
+    clone_scopes = ['clone_%d'%(idx) for idx in range(num_clones)]
     
     _set_batch_size(batch_size)
     
