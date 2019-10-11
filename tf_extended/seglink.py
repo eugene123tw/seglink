@@ -21,7 +21,7 @@ def is_anchor_center_in_rect(anchor, xs, ys, bbox_idx):
     """tell if the center of the anchor is in the rect represented using xs and ys and bbox_idx 
     """
     bbox_points = zip(xs[bbox_idx, :], ys[bbox_idx, :])
-    cnt = util.img.points_to_contour(bbox_points);
+    cnt = util.img.points_to_contour(bbox_points)
     acx, acy, aw, ah = anchor
     return util.img.is_in_contour((acx, acy), cnt)
     
@@ -39,7 +39,7 @@ def min_area_rect(xs, ys):
         
     num_rects = xs.shape[0]
     box = np.empty((num_rects, 5))#cx, cy, w, h, theta
-    for idx in xrange(num_rects):
+    for idx in range(num_rects):
         points = zip(xs[idx, :], ys[idx, :])
         cnt = util.img.points_to_contour(points)
         rect = cv2.minAreaRect(cnt)
@@ -87,8 +87,8 @@ def transform_cv_rect(rects):
     
     rects = np.asarray(rects, dtype = np.float32).copy()
     num_rects = np.shape(rects)[0]
-    for idx in xrange(num_rects):
-        cx, cy, w, h, theta = rects[idx, ...];
+    for idx in range(num_rects):
+        cx, cy, w, h, theta = rects[idx, ...]
         #assert theta < 0 and theta >= -90, "invalid theta: %f"%(theta) 
         if abs(theta) > 45 or (abs(theta) == 45 and w < h):
             w, h = [h, w]
@@ -112,7 +112,7 @@ def rotate_oriented_bbox_to_horizontal(center, bbox):
     assert np.shape(bbox) == (5, ) or np.shape(bbox) == (4, ), "bbox must be a vector of length 4 or 5"
     bbox = np.asarray(bbox.copy(), dtype = np.float32)
     
-    cx, cy, w, h, theta = bbox;
+    cx, cy, w, h, theta = bbox
     M = cv2.getRotationMatrix2D(center, theta, scale = 1) # 2x3
     
     cx, cy = np.dot(M, np.transpose([cx, cy, 1]))
@@ -131,8 +131,8 @@ def crop_horizontal_bbox_using_anchor(bbox, anchor):
     
     # xmin and xmax of the anchor    
     acx, acy, aw, ah = anchor
-    axmin = acx - aw / 2.0;
-    axmax = acx + aw / 2.0;
+    axmin = acx - aw / 2.0
+    axmax = acx + aw / 2.0
     
     # xmin and xmax of the bbox
     cx, cy, w, h = bbox[0:4]
@@ -144,7 +144,7 @@ def crop_horizontal_bbox_using_anchor(bbox, anchor):
     xmax = min(xmax, axmax)
     
     # transform xmin, xmax to cx and w
-    cx = (xmin + xmax) / 2.0;
+    cx = (xmin + xmax) / 2.0
     w = xmax - xmin
     bbox = bbox.copy()
     bbox[0:4] = [cx, cy, w, h]
@@ -163,7 +163,7 @@ def rotate_horizontal_bbox_to_oriented(center, bbox):
     assert np.shape(bbox) == (5, ) , "bbox must be a vector of length 4 or 5"
     bbox = np.asarray(bbox.copy(), dtype = np.float32)
     
-    cx, cy, w, h, theta = bbox;
+    cx, cy, w, h, theta = bbox
     M = cv2.getRotationMatrix2D(center, -theta, scale = 1) # 2x3
     cx, cy = np.dot(M, np.transpose([cx, cy, 1]))
     bbox[0:2] = [cx, cy]
@@ -203,7 +203,7 @@ def match_anchor_to_text_boxes(anchors, xs, ys):
     ys = np.asarray(ys, dtype = np.float32)
     
     num_anchors = anchors.shape[0]
-    seg_labels = np.ones((num_anchors, ), dtype = np.int32) * -1;
+    seg_labels = np.ones((num_anchors, ), dtype = np.int32) * -1
     seg_locations = np.zeros((num_anchors, 5), dtype = np.float32)
     
     # to avoid ln(0) in the ending process later.
@@ -221,20 +221,20 @@ def match_anchor_to_text_boxes(anchors, xs, ys):
     
     #represent bboxes using contours
     cnts = []
-    for bbox_idx in xrange(num_bboxes):
+    for bbox_idx in range(num_bboxes):
         bbox_points = zip(xs[bbox_idx, :], ys[bbox_idx, :])
-        cnt = util.img.points_to_contour(bbox_points);
+        cnt = util.img.points_to_contour(bbox_points)
         cnts.append(cnt)
         
     import time
     start_time = time.time()
     # match anchor to bbox
-    for anchor_idx in xrange(num_anchors):
+    for anchor_idx in range(num_anchors):
         anchor = anchors[anchor_idx, :]
         acx, acy, aw, ah = anchor
         center_point_matched = False
         height_matched = False
-        for bbox_idx in xrange(num_bboxes):
+        for bbox_idx in range(num_bboxes):
             # center point check
             center_point_matched = util.img.is_in_contour((acx, acy), cnts[bbox_idx])
             if not center_point_matched:
@@ -269,7 +269,7 @@ def match_anchor_to_text_boxes_fast(anchors, xs, ys):
     ys = np.asarray(ys, dtype = np.float32)
     
     num_anchors = anchors.shape[0]
-    seg_labels = np.ones((num_anchors, ), dtype = np.int32) * -1;
+    seg_labels = np.ones((num_anchors, ), dtype = np.int32) * -1
     seg_locations = np.zeros((num_anchors, 5), dtype = np.float32)
     
     # to avoid ln(0) in the ending process later.
@@ -288,7 +288,7 @@ def match_anchor_to_text_boxes_fast(anchors, xs, ys):
     # construct a bbox point map: keys are the poistion of all points in bbox contours, and 
     #    value being the bbox index
     bbox_mask = np.ones(config.image_shape, dtype = np.int32) * (-1)
-    for bbox_idx in xrange(num_bboxes):
+    for bbox_idx in range(num_bboxes):
         bbox_points = zip(xs[bbox_idx, :], ys[bbox_idx, :])
         bbox_cnts = util.img.points_to_contours(bbox_points)
         util.img.draw_contours(bbox_mask, bbox_cnts, -1, color = bbox_idx, border_width = - 1)
@@ -323,24 +323,24 @@ def reshape_link_gt_by_layer(link_gt):
     inter_layer_link_gts = {}
     cross_layer_link_gts = {}
     
-    idx = 0;
+    idx = 0
     for layer_idx, layer_name in enumerate(config.feat_layers):
         layer_shape = config.feat_shapes[layer_name]
         lh, lw = layer_shape
         
-        length = lh * lw * 8;
+        length = lh * lw * 8
         layer_link_gt = link_gt[idx: idx + length]
-        idx = idx + length;
+        idx = idx + length
         layer_link_gt = np.reshape(layer_link_gt, (lh, lw, 8))
         inter_layer_link_gts[layer_name] = layer_link_gt
         
-    for layer_idx in xrange(1, len(config.feat_layers)):
+    for layer_idx in range(1, len(config.feat_layers)):
         layer_name = config.feat_layers[layer_idx]
         layer_shape = config.feat_shapes[layer_name]
         lh, lw = layer_shape
-        length = lh * lw * 4;
+        length = lh * lw * 4
         layer_link_gt = link_gt[idx: idx + length]
-        idx = idx + length;
+        idx = idx + length
         layer_link_gt = np.reshape(layer_link_gt, (lh, lw, 4))
         cross_layer_link_gts[layer_name] = layer_link_gt
     
@@ -349,19 +349,19 @@ def reshape_link_gt_by_layer(link_gt):
         
 def reshape_labels_by_layer(labels):
     layer_labels = {}
-    idx = 0;
+    idx = 0
     for layer_name in config.feat_layers:
         layer_shape = config.feat_shapes[layer_name]
         label_length = np.prod(layer_shape)
         
         layer_match_result = labels[idx: idx + label_length]
-        idx = idx + label_length;
+        idx = idx + label_length
         
         layer_match_result = np.reshape(layer_match_result, layer_shape)
         
-        layer_labels[layer_name] = layer_match_result;
+        layer_labels[layer_name] = layer_match_result
     assert idx == len(labels)
-    return layer_labels;
+    return layer_labels
 
 def get_inter_layer_neighbours(x, y):
     return [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1), \
@@ -376,7 +376,7 @@ def is_valid_cord(x, y, w, h):
     Tell whether the 2D coordinate (x, y) is valid or not.
     If valid, it should be on an h x w image
     """
-    return x >=0 and x < w and y >= 0 and y < h;
+    return x >=0 and x < w and y >= 0 and y < h
 
 def cal_link_labels(labels):
     layer_labels = reshape_labels_by_layer(labels)
@@ -392,8 +392,8 @@ def cal_link_labels(labels):
         if layer_idx > 0: # no cross-layer link for the first layer. 
             cross_layer_link_gt = np.ones((h, w, 4), dtype = np.int32) * (-1)
             
-        for x in xrange(w):
-            for y in xrange(h):
+        for x in range(w):
+            for y in range(h):
                 # the value in layer_match_result stands for the bbox idx a segments matches 
                 # if less than 0, not matched.
                 # only matched segments are considered in link_gt calculation
@@ -411,11 +411,11 @@ def cal_link_labels(labels):
                             # if the current default box has matched the same bbox with this neighbour, \
                             # the linkage connecting them is labeled as positive.
                             if matched_idx == n_matched_idx: 
-                                inter_layer_link_gt[y, x, nidx] = n_matched_idx;
+                                inter_layer_link_gt[y, x, nidx] = n_matched_idx
                                 
                     # cross layer link_gt calculation
                     if layer_idx > 0:
-                        previous_layer_name = config.feat_layers[layer_idx - 1];
+                        previous_layer_name = config.feat_layers[layer_idx - 1]
                         ph, pw = config.feat_shapes[previous_layer_name]
                         previous_layer_match_result = layer_labels[previous_layer_name]
                         neighbours = get_cross_layer_neighbours(x, y)
@@ -424,7 +424,7 @@ def cal_link_labels(labels):
                             if is_valid_cord(nx, ny, pw, ph):
                                 n_matched_idx = previous_layer_match_result[ny, nx]
                                 if matched_idx == n_matched_idx:
-                                    cross_layer_link_gt[y, x, nidx] = n_matched_idx;                             
+                                    cross_layer_link_gt[y, x, nidx] = n_matched_idx                             
                     
         inter_layer_link_gts.append(inter_layer_link_gt)
         
@@ -434,8 +434,8 @@ def cal_link_labels(labels):
     # construct the final link_gt from layer-wise data.
     # note that this reshape and concat order is the same with that of predicted linkages, which\
     #     has been done in the construction of SegLinkNet.
-    inter_layer_link_gts = np.hstack([np.reshape(t, -1) for t in inter_layer_link_gts]);
-    cross_layer_link_gts = np.hstack([np.reshape(t, -1) for t in cross_layer_link_gts]);
+    inter_layer_link_gts = np.hstack([np.reshape(t, -1) for t in inter_layer_link_gts])
+    cross_layer_link_gts = np.hstack([np.reshape(t, -1) for t in cross_layer_link_gts])
     link_gt = np.hstack([inter_layer_link_gts, cross_layer_link_gts])
     return link_gt
 
@@ -506,7 +506,7 @@ def get_all_seglink_gt(xs, ys, ignored):
             but got %s and %s'%(len(xs), len(ignored))
             
     anchors = config.default_anchors
-    seg_labels, seg_locations = match_anchor_to_text_boxes_fast(anchors, xs, ys);
+    seg_labels, seg_locations = match_anchor_to_text_boxes_fast(anchors, xs, ys)
     link_labels = cal_link_labels(seg_labels)
     seg_offsets = encode_seg_offsets(seg_locations)
     
@@ -554,11 +554,11 @@ def tf_get_all_seglink_gt(xs, ys, ignored):
     
     xs = xs * w_I
     ys = ys * h_I    
-    seg_labels, seg_offsets, link_labels = tf.py_func(get_all_seglink_gt, [xs, ys, ignored], [tf.int32, tf.float32, tf.int32]);
+    seg_labels, seg_offsets, link_labels = tf.py_func(get_all_seglink_gt, [xs, ys, ignored], [tf.int32, tf.float32, tf.int32])
     seg_labels.set_shape([config.num_anchors])
     seg_offsets.set_shape([config.num_anchors, 5])
     link_labels.set_shape([config.num_links])
-    return seg_labels, seg_offsets, link_labels;
+    return seg_labels, seg_offsets, link_labels
 
 ############################################################################################################
 #                       linking segments together                                                          #
@@ -572,11 +572,11 @@ def group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold)
     assert len(np.shape(seg_scores)) == 1
     assert len(np.shape(link_scores)) == 1
     
-    valid_segs = np.where(seg_scores >= seg_conf_threshold)[0];# `np.where` returns a tuple
+    valid_segs = np.where(seg_scores >= seg_conf_threshold)[0]# `np.where` returns a tuple
     assert valid_segs.ndim == 1
     mask = {}
     for s in valid_segs:
-        mask[s] = -1;
+        mask[s] = -1
     
     def get_root(idx):
         parent = mask[idx]
@@ -622,8 +622,8 @@ def group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold)
             layer_cross_link_score = layer_cross_link_scores[layer_name]
             
             
-        for y in xrange(lh):
-            for x in xrange(lw):
+        for y in range(lh):
+            for x in range(lw):
                 seg_index = layer_seg_index[y, x]
                 _seg_score = seg_scores[seg_index]
                 if _seg_score >= seg_conf_threshold:
@@ -677,7 +677,7 @@ def tf_seglink_to_bbox(seg_cls_pred, link_cls_pred, seg_offsets_pred, image_shap
     link_scores = link_cls_pred[:, 1]
     image_bboxes = tf.py_func(seglink_to_bbox, 
           [seg_scores, link_scores, seg_offsets_pred, image_shape, seg_conf_threshold, link_conf_threshold], 
-          tf.float32);
+          tf.float32)
     return image_bboxes
     
     
@@ -696,7 +696,7 @@ def seglink_to_bbox(seg_scores, link_scores, seg_offsets_pred,
     if image_shape is None:
         image_shape = config.image_shape
 
-    seg_groups = group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold);
+    seg_groups = group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold)
     seg_locs = decode_seg_offsets_pred(seg_offsets_pred)
     
     bboxes = []
@@ -733,7 +733,7 @@ def combine_segs(segs, return_bias = False):
 
     ## the slope
     bar_theta = np.mean(segs[:, 4])# average theta
-    k = tan(bar_theta);
+    k = tan(bar_theta)
     
     ## the bias: minimize sum (k*x_i + b - y_i)^2
     ### let c_i = k*x_i - y_i
@@ -752,13 +752,13 @@ def combine_segs(segs, return_bias = False):
     proj_points = np.transpose([projs * cos(bar_theta), projs * sin(bar_theta)])
     
     # find the max distance
-    max_dist = -1;
-    idx1 = -1;
-    idx2 = -1;
+    max_dist = -1
+    idx1 = -1
+    idx2 = -1
 
-    for i in xrange(len(proj_points)):
+    for i in range(len(proj_points)):
         point1 = proj_points[i, :]
-        for j in xrange(i + 1, len(proj_points)):
+        for j in range(i + 1, len(proj_points)):
             point2 = proj_points[j, :]
             dist = np.sqrt(np.sum((point1 - point2) ** 2))
             if dist > max_dist:

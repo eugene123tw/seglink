@@ -1,13 +1,12 @@
-#encoding=utf-8
-import numpy as np;
+import numpy as np
 import tensorflow as tf
 import util
-from dataset_utils import int64_feature, float_feature, bytes_feature, convert_to_example
+from datasets.dataset_utils import int64_feature, float_feature, bytes_feature, convert_to_example
         
 
 def cvt_to_tfrecords(output_path , data_path, gt_path):
     image_names = util.io.ls(data_path, '.jpg')#[0:10];
-    print "%d images found in %s"%(len(image_names), data_path);
+    print("%d images found in %s"%(len(image_names), data_path))
 
     with tf.python_io.TFRecordWriter(output_path) as tfrecord_writer:
         for idx, image_name in enumerate(image_names):
@@ -17,29 +16,29 @@ def cvt_to_tfrecords(output_path , data_path, gt_path):
             labels_text = [];
             ignored = []
             path = util.io.join_path(data_path, image_name);
-            print "\tconverting image: %d/%d %s"%(idx, len(image_names), image_name);
+            print("\tconverting image: %d/%d %s"%(idx, len(image_names), image_name))
             image_data = tf.gfile.FastGFile(path, 'r').read()
             
-            image = util.img.imread(path, rgb = True);
+            image = util.img.imread(path, rgb = True)
             shape = image.shape
-            h, w = shape[0:2];
-            h *= 1.0;
-            w *= 1.0;
-            image_name = util.str.split(image_name, '.')[0];
-            gt_name = 'gt_' + image_name + '.txt';
-            gt_filepath = util.io.join_path(gt_path, gt_name);
-            lines = util.io.read_lines(gt_filepath);
+            h, w = shape[0:2]
+            h *= 1.0
+            w *= 1.0
+            image_name = util.str.split(image_name, '.')[0]
+            gt_name = 'gt_' + image_name + '.txt'
+            gt_filepath = util.io.join_path(gt_path, gt_name)
+            lines = util.io.read_lines(gt_filepath)
                 
             for line in lines:
                 gt = util.str.remove_all(line, ',')
-                gt = util.str.split(gt, ' ');
-                bbox = [int(gt[i]) for i in range(4)];
-                xmin, ymin, xmax, ymax  = np.asarray(bbox) / [w, h, w, h];
-                oriented_bboxes.append([xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax]);
+                gt = util.str.split(gt, ' ')
+                bbox = [int(gt[i]) for i in range(4)]
+                xmin, ymin, xmax, ymax  = np.asarray(bbox) / [w, h, w, h]
+                oriented_bboxes.append([xmin, ymin, xmax, ymin, xmax, ymax, xmin, ymax])
                 bboxes.append([xmin, ymin, xmax, ymax])
-                ignored.append(0);
-                labels_text.append(line.split('"')[1]);
-                labels.append(1);
+                ignored.append(0)
+                labels_text.append(line.split('"')[1])
+                labels.append(1)
             example = convert_to_example(image_data, image_name, labels, ignored, labels_text, bboxes, oriented_bboxes, shape)
             tfrecord_writer.write(example.SerializeToString())
         
