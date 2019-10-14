@@ -14,23 +14,22 @@
 # ==============================================================================
 """Pre-processing images for SSD-type networks.
 """
-from enum import Enum, IntEnum
+from enum import IntEnum
+
 import numpy as np
-
 import tensorflow as tf
-import tf_extended as tfe
-
 from tensorflow.python.ops import control_flow_ops
 
+import tf_extended as tfe
 from preprocessing import tf_image
 
 slim = tf.contrib.slim
 
 # Resizing strategies.
-Resize = IntEnum('Resize', ('NONE',                # Nothing!
-                            'CENTRAL_CROP',        # Crop (and pad if necessary).
-                            'PAD_AND_RESIZE',      # Pad, and resize to output shape.
-                            'WARP_RESIZE'))        # Warp resize.
+Resize = IntEnum('Resize', ('NONE',  # Nothing!
+                            'CENTRAL_CROP',  # Crop (and pad if necessary).
+                            'PAD_AND_RESIZE',  # Pad, and resize to output shape.
+                            'WARP_RESIZE'))  # Warp resize.
 
 # VGG mean parameters.
 _R_MEAN = 123.
@@ -38,12 +37,13 @@ _G_MEAN = 117.
 _B_MEAN = 104.
 
 # Some training pre-processing parameters.
-BBOX_CROP_OVERLAP = 0.1         # Minimum overlap to keep a bbox after cropping.
+BBOX_CROP_OVERLAP = 0.1  # Minimum overlap to keep a bbox after cropping.
 MIN_OBJECT_COVERED = 0.5
 CROP_ASPECT_RATIO_RANGE = (0.5, 2.)  # Distortion ratio during cropping.
 EVAL_SIZE = (300, 300)
 AREA_RANGE = [0.1, 1]
 FLIP = False
+
 
 def tf_image_whitened(image, means=[_R_MEAN, _G_MEAN, _B_MEAN]):
     """Subtracts the given means from each image channel.
@@ -116,8 +116,8 @@ def apply_with_random_selector(x, func, num_cases):
     sel = tf.random_uniform([], maxval=num_cases, dtype=tf.int32)
     # Pass the real x only to one of the func calls.
     return control_flow_ops.merge([
-            func(control_flow_ops.switch(x, tf.equal(sel, case))[1], case)
-            for case in range(num_cases)])[0]
+        func(control_flow_ops.switch(x, tf.equal(sel, case))[1], case)
+        for case in range(num_cases)])[0]
 
 
 def distort_color(image, color_ordering=0, fast_mode=True, scope=None):
@@ -176,11 +176,11 @@ def distort_color(image, color_ordering=0, fast_mode=True, scope=None):
 def distorted_bounding_box_crop(image,
                                 labels,
                                 bboxes,
-                                xs, ys, 
+                                xs, ys,
                                 min_object_covered,
                                 aspect_ratio_range,
                                 area_range,
-                                max_attempts = 200,
+                                max_attempts=200,
                                 scope=None):
     """Generates cropped_image using a one of the bboxes randomly distorted.
 
@@ -210,13 +210,13 @@ def distorted_bounding_box_crop(image,
         # Each bounding box has shape [1, num_boxes, box coords] and
         # the coordinates are ordered [ymin, xmin, ymax, xmax].
         bbox_begin, bbox_size, distort_bbox = tf.image.sample_distorted_bounding_box(
-                tf.shape(image),
-                bounding_boxes=tf.expand_dims(bboxes, 0),
-                min_object_covered=min_object_covered,
-                aspect_ratio_range=aspect_ratio_range,
-                area_range=area_range,
-                max_attempts=max_attempts,
-                use_image_if_no_bounding_boxes=True)
+            tf.shape(image),
+            bounding_boxes=tf.expand_dims(bboxes, 0),
+            min_object_covered=min_object_covered,
+            aspect_ratio_range=aspect_ratio_range,
+            area_range=area_range,
+            max_attempts=max_attempts,
+            use_image_if_no_bounding_boxes=True)
         distort_bbox = distort_bbox[0, 0]
 
         # Crop the image to the specified bounding box.
@@ -226,8 +226,8 @@ def distorted_bounding_box_crop(image,
 
         # Update bounding boxes: resize and filter out.
         bboxes, xs, ys = tfe.bboxes_resize(distort_bbox, bboxes, xs, ys)
-        labels, bboxes, xs, ys = tfe.bboxes_filter_overlap(labels, bboxes, xs, ys, 
-                                                threshold=BBOX_CROP_OVERLAP, assign_negative = False)
+        labels, bboxes, xs, ys = tfe.bboxes_filter_overlap(labels, bboxes, xs, ys,
+                                                           threshold=BBOX_CROP_OVERLAP, assign_negative=False)
         return cropped_image, labels, bboxes, xs, ys, distort_bbox
 
 
@@ -258,17 +258,16 @@ def preprocess_for_train(image, labels, bboxes, xs, ys,
         # Convert to float scaled [0, 1].
         if image.dtype != tf.float32:
             image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-#         tf_summary_image(image, bboxes, 'image_with_bboxes')
-
+        #         tf_summary_image(image, bboxes, 'image_with_bboxes')
 
         # Distort image and bounding boxes.
         dst_image = image
         dst_image, labels, bboxes, xs, ys, distort_bbox = \
             distorted_bounding_box_crop(image, labels, bboxes, xs, ys,
-                                        min_object_covered = MIN_OBJECT_COVERED,
-                                        aspect_ratio_range = CROP_ASPECT_RATIO_RANGE, 
-                                        area_range = AREA_RANGE)
-            
+                                        min_object_covered=MIN_OBJECT_COVERED,
+                                        aspect_ratio_range=CROP_ASPECT_RATIO_RANGE,
+                                        area_range=AREA_RANGE)
+
         # Resize image to output size.
         dst_image = tf_image.resize_image(dst_image, out_shape,
                                           method=tf.image.ResizeMethod.BILINEAR,
@@ -281,9 +280,9 @@ def preprocess_for_train(image, labels, bboxes, xs, ys,
 
         # Randomly distort the colors. There are 4 ways to do it.
         dst_image = apply_with_random_selector(
-                dst_image,
-                lambda x, ordering: distort_color(x, ordering, fast_mode),
-                num_cases=4)
+            dst_image,
+            lambda x, ordering: distort_color(x, ordering, fast_mode),
+            num_cases=4)
         tf_summary_image(dst_image, bboxes, 'image_color_distorted')
 
         # Rescale to VGG input scale.
@@ -334,7 +333,7 @@ def preprocess_image(image,
                      bboxes,
                      xs, ys,
                      out_shape,
-                     data_format = 'NHWC',
+                     data_format='NHWC',
                      is_training=False,
                      **kwargs):
     """Pre-process an given image.

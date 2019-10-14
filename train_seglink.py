@@ -22,16 +22,16 @@ tf.app.flags.DEFINE_bool('train_with_ignored', False,
 tf.app.flags.DEFINE_float('seg_loc_loss_weight', 1.0, 'the loss weight of segment localization')
 tf.app.flags.DEFINE_float('link_cls_loss_weight', 1.0, 'the loss weight of linkage classification loss')
 
-tf.app.flags.DEFINE_string('train_dir', None, 
+tf.app.flags.DEFINE_string('train_dir', '/home/eugene/git/seglink/trained_models',
                            'the path to store checkpoints and eventfiles for summaries')
 
-tf.app.flags.DEFINE_string('checkpoint_path', None, 
+tf.app.flags.DEFINE_string('checkpoint_path', '/home/eugene/git/seglink/trained_models/checkpoint',
    'the path of pretrained model to be used. If there are checkpoints in train_dir, this config will be ignored.')
 
 tf.app.flags.DEFINE_float('gpu_memory_fraction', -1, 
                           'the gpu memory fraction to be used. If less than 0, allow_growth = True is used.')
 
-tf.app.flags.DEFINE_integer('batch_size', None, 'The number of samples in each batch.')
+tf.app.flags.DEFINE_integer('batch_size', 4, 'The number of samples in each batch.')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'The number of gpus can be used.')
 tf.app.flags.DEFINE_integer('max_number_of_steps', 1000000, 'The maximum number of training steps.')
 tf.app.flags.DEFINE_integer('log_every_n_steps', 1, 'log frequency')
@@ -61,11 +61,14 @@ tf.app.flags.DEFINE_integer(
 # Dataset Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-    'dataset_name', None, 'The name of the dataset to load.')
+    'dataset_name', 'icdar2015',
+    'The name of the dataset to load.')
 tf.app.flags.DEFINE_string(
-    'dataset_split_name', 'train', 'The name of the train/test split.')
+    'dataset_split_name', 'train',
+    'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
-    'dataset_dir', None, 'The directory where the dataset files are stored.')
+    'dataset_dir', '/home/eugene/_DATASETS/scene_text/icdar_2015',
+    'The directory where the dataset files are stored.')
 tf.app.flags.DEFINE_string(
     'model_name', 'seglink_vgg', 'The name of the architecture to train.')
 tf.app.flags.DEFINE_integer('train_image_width', 512, 'Train image size')
@@ -99,7 +102,7 @@ def config_initialization():
     tf.summary.scalar('batch_size', batch_size)
     tf.summary.scalar('batch_size_per_gpu', batch_size_per_gpu)
 
-    util.proc.set_proc_name(FLAGS.model_name + '_' + FLAGS.dataset_name)
+    # util.proc.set_proc_name(FLAGS.model_name + '_' + FLAGS.dataset_name)
     
     dataset = dataset_factory.get_dataset(FLAGS.dataset_name, FLAGS.dataset_split_name, FLAGS.dataset_dir)
     config.print_config(FLAGS, dataset)
@@ -180,7 +183,7 @@ def create_clones(batch_queue):
         optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=FLAGS.momentum, name='Momentum')
         
     # place clones
-    seglink_loss = 0; # for summary only
+    seglink_loss = 0 # for summary only
     gradients = []
     for clone_idx, gpu in enumerate(config.gpus):
         do_summary = clone_idx == 0 # only summary on the first clone
@@ -243,7 +246,7 @@ def train(train_op):
     if FLAGS.gpu_memory_fraction < 0:
         sess_config.gpu_options.allow_growth = True
     elif FLAGS.gpu_memory_fraction > 0:
-        sess_config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction;
+        sess_config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory_fraction
     
     init_fn = util.tf.get_init_fn(checkpoint_path = FLAGS.checkpoint_path, train_dir = FLAGS.train_dir, 
                           ignore_missing_vars = FLAGS.ignore_missing_vars, checkpoint_exclude_scopes = FLAGS.checkpoint_exclude_scopes)
