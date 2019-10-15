@@ -147,6 +147,16 @@ class SegLinkNet(object):
         tf.summary.histogram('seg_scores', self.seg_scores)
 
     def build_loss(self, seg_labels, seg_offsets, link_labels, do_summary=True):
+        """
+        Args:
+            seg_labels: mask of positive/negative anchors with shape: (num_anchors, )
+            seg_offsets: offsets from matched anchor to ground truth with shape: (num_anchors, 5)
+            link_labels: mask of within-layer/cross-layer connection with shape: (num_links, )
+            do_summary:
+
+        Returns:
+
+        """
         batch_size = config.batch_size_per_gpu
 
         # note that for label values in both seg_labels and link_labels:

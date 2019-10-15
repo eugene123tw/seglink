@@ -11,7 +11,7 @@ def generate_anchors():
     layer_anchors = {}
     h_I, w_I = config.image_shape
     for layer_name in config.feat_layers:
-        feat_shape = config.feat_shapes[layer_name]
+        feat_shape = config.feat_shapes[layer_name]  # h_l, w_l
         h_l, w_l = feat_shape
         anchors = _generate_anchors_one_layer(h_I, w_I, h_l, w_l)
         all_anchors.append(anchors)

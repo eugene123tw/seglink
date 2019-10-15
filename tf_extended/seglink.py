@@ -267,9 +267,9 @@ def match_anchor_to_text_boxes_fast(anchors, xs, ys):
     """ Match anchors to text boxes.
 
     Args:
-        anchors: in shape (num_anchors, 4)
-        xs:
-        ys:
+        anchors: in shape (num_anchors, 4) -> default boxes
+        xs: (x1, x2, x3, x4) -> ground truth
+        ys: (y1, y2, y3, y4) -> ground truth
 
     Returns:
         seg_labels: shape = (N,), the seg_labels of segments. each value is the index of matched box if >=0.
@@ -594,7 +594,7 @@ def tf_get_all_seglink_gt(xs, ys, ignored):
 
     xs = xs * w_I
     ys = ys * h_I
-    seg_labels, seg_offsets, link_labels = tf.py_func(get_all_seglink_gt, [xs, ys, ignored],
+    seg_labels, seg_offsets, link_labels = tf.py_function(get_all_seglink_gt, [xs, ys, ignored],
                                                       [tf.int32, tf.float32, tf.int32])
     seg_labels.set_shape([config.num_anchors])
     seg_offsets.set_shape([config.num_anchors, 5])

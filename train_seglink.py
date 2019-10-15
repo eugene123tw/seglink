@@ -190,6 +190,10 @@ def create_clones(batch_queue):
         with tf.variable_scope(tf.get_variable_scope(), reuse = True):# the variables has been created in config.init_config
             with tf.name_scope(config.clone_scopes[clone_idx]) as clone_scope:
                 with tf.device(gpu) as clone_device:
+                    # Ground Truth information =============
+                    # b_seg_label: mask of positive/negitive anchors with shape: (num_anchors, )
+                    # b_seg_loc: offsets from matched anchor to ground truth with shape: (num_anchors, 5)
+                    # b_link_label: mask of within-layer/cross-layer connection
                     b_image, b_seg_label, b_seg_loc, b_link_label = batch_queue.dequeue()
                     net = seglink_symbol.SegLinkNet(inputs = b_image, data_format = config.data_format)
                     
