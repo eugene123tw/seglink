@@ -35,7 +35,7 @@ def min_area_rect(xs, ys):
         ys: numpy ndarray with shape=(N,4), [y1, y2, y3, y4]
             Note that [(x1, y1), (x2, y2), (x3, y3), (x4, y4)] can represent an oriented bbox.
     Return:
-        the oriented rects sorrounding the box, in the format:[cx, cy, w, h, theta]. 
+        the oriented rects surrounding the box, in the format:[cx, cy, w, h, theta].
     """
     xs = np.asarray(xs, dtype=np.float32)
     ys = np.asarray(ys, dtype=np.float32)
@@ -223,7 +223,7 @@ def match_anchor_to_text_boxes(anchors, xs, ys):
     num_bboxes = xs.shape[0]
 
     # represent bboxes using min area rects
-    rects = min_area_rect(xs, ys)  # shape = (num_bboxes, 5)
+    rects = min_area_rect(xs, ys)  # shape = (num_bboxes, 5): (cx, cy, w, h, theta)
     rects = transform_cv_rect(rects)
     assert rects.shape == (num_bboxes, 5)
 
@@ -264,11 +264,17 @@ def match_anchor_to_text_boxes(anchors, xs, ys):
 
 # @util.dec.print_calling_in_short_for_tf
 def match_anchor_to_text_boxes_fast(anchors, xs, ys):
-    """Match anchors to text boxes. 
-       Return:
-           seg_labels: shape = (N,), the seg_labels of segments. each value is the index of matched box if >=0.  
-           seg_locations: shape = (N, 5), the absolute location of segments. Only the match segments are correctly calculated.
-           
+    """ Match anchors to text boxes.
+
+    Args:
+        anchors: in shape (num_anchors, 4)
+        xs:
+        ys:
+
+    Returns:
+        seg_labels: shape = (N,), the seg_labels of segments. each value is the index of matched box if >=0.
+        seg_locations: shape = (N, 5), the absolute location of segments.
+                       Only the match segments are correctly calculated.
     """
 
     assert len(np.shape(anchors)) == 2 and np.shape(anchors)[
@@ -295,7 +301,7 @@ def match_anchor_to_text_boxes_fast(anchors, xs, ys):
     rects = transform_cv_rect(rects)
     assert rects.shape == (num_bboxes, 5)
 
-    # construct a bbox point map: keys are the poistion of all points in bbox contours, and 
+    # construct a bbox point map: keys are the position of all points in bbox contours, and
     #    value being the bbox index
     bbox_mask = np.ones(config.image_shape, dtype=np.int32) * (-1)
     for bbox_idx in range(num_bboxes):
@@ -330,7 +336,7 @@ def match_anchor_to_text_boxes_fast(anchors, xs, ys):
 #                       link_gt calculation                                                                #
 ############################################################################################################
 def reshape_link_gt_by_layer(link_gt):
-    inter_layer_link_gts = {}
+    within_layer_link_gts = {}
     cross_layer_link_gts = {}
 
     idx = 0
@@ -342,7 +348,7 @@ def reshape_link_gt_by_layer(link_gt):
         layer_link_gt = link_gt[idx: idx + length]
         idx = idx + length
         layer_link_gt = np.reshape(layer_link_gt, (lh, lw, 8))
-        inter_layer_link_gts[layer_name] = layer_link_gt
+        within_layer_link_gts[layer_name] = layer_link_gt
 
     for layer_idx in range(1, len(config.feat_layers)):
         layer_name = config.feat_layers[layer_idx]
@@ -355,7 +361,7 @@ def reshape_link_gt_by_layer(link_gt):
         cross_layer_link_gts[layer_name] = layer_link_gt
 
     assert idx == len(link_gt)
-    return inter_layer_link_gts, cross_layer_link_gts
+    return within_layer_link_gts, cross_layer_link_gts
 
 
 def reshape_labels_by_layer(labels):
@@ -375,7 +381,7 @@ def reshape_labels_by_layer(labels):
     return layer_labels
 
 
-def get_inter_layer_neighbours(x, y):
+def get_within_layer_neighbours(x, y):
     return [(x - 1, y - 1), (x, y - 1), (x + 1, y - 1), \
             (x - 1, y), (x + 1, y), \
             (x - 1, y + 1), (x, y + 1), (x + 1, y + 1)]
@@ -395,14 +401,14 @@ def is_valid_cord(x, y, w, h):
 
 def cal_link_labels(labels):
     layer_labels = reshape_labels_by_layer(labels)
-    inter_layer_link_gts = []
+    within_layer_link_gts = []
     cross_layer_link_gts = []
     for layer_idx, layer_name in enumerate(config.feat_layers):
         layer_match_result = layer_labels[layer_name]
         h, w = config.feat_shapes[layer_name]
 
-        # initalize link groundtruth for the current layer
-        inter_layer_link_gt = np.ones((h, w, 8), dtype=np.int32) * (-1)
+        # initialize link ground truth for the current layer
+        within_layer_link_gt = np.ones((h, w, 8), dtype=np.int32) * (-1)
 
         if layer_idx > 0:  # no cross-layer link for the first layer.
             cross_layer_link_gt = np.ones((h, w, 4), dtype=np.int32) * (-1)
@@ -415,9 +421,9 @@ def cal_link_labels(labels):
                 if layer_match_result[y, x] >= 0:
                     matched_idx = layer_match_result[y, x]
 
-                    # inter-layer link_gt calculation
-                    # calculate inter-layer link_gt using the bbox matching result of inter-layer neighbours 
-                    neighbours = get_inter_layer_neighbours(x, y)
+                    # within-layer link_gt calculation
+                    # calculate within-layer link_gt using the bbox matching result of within-layer neighbours
+                    neighbours = get_within_layer_neighbours(x, y)
                     for nidx, nxy in enumerate(neighbours):  # n here is short for neighbour
                         nx, ny = nxy
                         if is_valid_cord(nx, ny, w, h):
@@ -425,7 +431,7 @@ def cal_link_labels(labels):
                             # if the current default box has matched the same bbox with this neighbour, \
                             # the linkage connecting them is labeled as positive.
                             if matched_idx == n_matched_idx:
-                                inter_layer_link_gt[y, x, nidx] = n_matched_idx
+                                within_layer_link_gt[y, x, nidx] = n_matched_idx
 
                     # cross layer link_gt calculation
                     if layer_idx > 0:
@@ -440,7 +446,7 @@ def cal_link_labels(labels):
                                 if matched_idx == n_matched_idx:
                                     cross_layer_link_gt[y, x, nidx] = n_matched_idx
 
-        inter_layer_link_gts.append(inter_layer_link_gt)
+        within_layer_link_gts.append(within_layer_link_gt)
 
         if layer_idx > 0:
             cross_layer_link_gts.append(cross_layer_link_gt)
@@ -448,9 +454,9 @@ def cal_link_labels(labels):
     # construct the final link_gt from layer-wise data.
     # note that this reshape and concat order is the same with that of predicted linkages, which\
     #     has been done in the construction of SegLinkNet.
-    inter_layer_link_gts = np.hstack([np.reshape(t, -1) for t in inter_layer_link_gts])
+    within_layer_link_gts = np.hstack([np.reshape(t, -1) for t in within_layer_link_gts])
     cross_layer_link_gts = np.hstack([np.reshape(t, -1) for t in cross_layer_link_gts])
-    link_gt = np.hstack([inter_layer_link_gts, cross_layer_link_gts])
+    link_gt = np.hstack([within_layer_link_gts, cross_layer_link_gts])
     return link_gt
 
 
@@ -510,9 +516,20 @@ def decode_seg_offsets_pred(seg_offsets_pred):
 
 # @util.dec.print_calling_in_short_for_tf
 def get_all_seglink_gt(xs, ys, ignored):
-    # calculate ground truths.
-    # for matching results, i.e., seg_labels and link_labels, the values stands for the 
-    #     index of matched bbox
+    """ calculate ground truths.
+        for matching results, i.e., seg_labels and link_labels, the values stands for the index of matched bbox
+
+    Args:
+        xs: x-coordinate tensor represents ground truth quadrilateral boxes with shape=(N, 4), values in 0~1
+            4 values represent (x1, x2, x3, x4).
+        ys: y-coordinate tensor represents ground truth quadrilateral boxes with shape=(N, 4), values in 0~1
+            4 values represent (y1, y2, y3, y4).
+        ignored: mask used to ignore difficult quadrilateral boxes
+
+    Returns:
+
+    """
+
     assert len(np.shape(xs)) == 2 and \
            np.shape(xs)[-1] == 4 and \
            np.shape(ys) == np.shape(xs), \
@@ -562,7 +579,16 @@ def get_all_seglink_gt(xs, ys, ignored):
 
 def tf_get_all_seglink_gt(xs, ys, ignored):
     """
-    xs, ys: tensors reprensenting ground truth bbox, both with shape=(N, 4), values in 0~1
+    
+    Args:
+        xs: x-coordinate tensor represents ground truth quadrilateral boxes with shape=(N, 4), values in 0~1
+            4 values represent (x1, x2, x3, x4).
+        ys: y-coordinate tensor represents ground truth quadrilateral boxes with shape=(N, 4), values in 0~1
+            4 values represent (y1, y2, y3, y4).
+        ignored: 
+
+    Returns:
+
     """
     h_I, w_I = config.image_shape
 
@@ -622,13 +648,13 @@ def group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold)
     seg_indexes = np.arange(len(seg_scores))
     layer_seg_indexes = reshape_labels_by_layer(seg_indexes)
 
-    layer_inter_link_scores, layer_cross_link_scores = reshape_link_gt_by_layer(link_scores)
+    layer_within_link_scores, layer_cross_link_scores = reshape_link_gt_by_layer(link_scores)
 
     for layer_index, layer_name in enumerate(config.feat_layers):
         layer_shape = config.feat_shapes[layer_name]
         lh, lw = layer_shape
         layer_seg_index = layer_seg_indexes[layer_name]
-        layer_inter_link_score = layer_inter_link_scores[layer_name]
+        layer_within_link_score = layer_within_link_scores[layer_name]
         if layer_index > 0:
             previous_layer_name = config.feat_layers[layer_index - 1]
             previous_layer_seg_index = layer_seg_indexes[previous_layer_name]
@@ -642,16 +668,16 @@ def group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold)
                 _seg_score = seg_scores[seg_index]
                 if _seg_score >= seg_conf_threshold:
 
-                    # find inter layer linked neighbours                    
-                    inter_layer_neighbours = get_inter_layer_neighbours(x, y)
-                    for nidx, nxy in enumerate(inter_layer_neighbours):
+                    # find within layer linked neighbours
+                    within_layer_neighbours = get_within_layer_neighbours(x, y)
+                    for nidx, nxy in enumerate(within_layer_neighbours):
                         nx, ny = nxy
 
                         # the condition of connecting neighbour segment: valid coordinate, 
                         # valid segment confidence and valid link confidence.
                         if is_valid_cord(nx, ny, lw, lh) and \
                                 seg_scores[layer_seg_index[ny, nx]] >= seg_conf_threshold and \
-                                layer_inter_link_score[y, x, nidx] >= link_conf_threshold:
+                                layer_within_link_score[y, x, nidx] >= link_conf_threshold:
                             n_seg_index = layer_seg_index[ny, nx]
                             union(seg_index, n_seg_index)
 
@@ -666,6 +692,7 @@ def group_segs(seg_scores, link_scores, seg_conf_threshold, link_conf_threshold)
                                 n_seg_index = previous_layer_seg_index[ny, nx]
                                 union(seg_index, n_seg_index)
 
+    # Union−Find
     return to_list()
 
 
@@ -827,7 +854,7 @@ def bboxes_to_xys(bboxes, image_shape):
     xys = np.zeros((len(bboxes), 8))
     for bbox_idx, bbox in enumerate(bboxes):
         bbox = ((bbox[0], bbox[1]), (bbox[2], bbox[3]), bbox[4])
-        points = cv2.cv.BoxPoints(bbox)
+        points = cv2.boxPoints(bbox)
         points = np.int0(points)
         for i_xy, (x, y) in enumerate(points):
             x = get_valid_x(x)

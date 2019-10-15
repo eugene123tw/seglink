@@ -1,8 +1,7 @@
-#encoding=utf-8
-import numpy as np;
+import numpy as np
 import tensorflow as tf
-import util;
-from dataset_utils import int64_feature, float_feature, bytes_feature, convert_to_example
+import util
+from datasets.dataset_utils import int64_feature, float_feature, bytes_feature, convert_to_example
 
 # encoding = utf-8
 import numpy as np    
@@ -77,7 +76,7 @@ class SynthTextDataFetcher():
         return is_valid, min_x / width, min_y /height, max_x / width, max_y / height, xys
         
     def get_txt(self, image_idx, word_idx):
-        txts = self.txts[image_idx];
+        txts = self.txts[image_idx]
         clean_txts = []
         for txt in txts:
             clean_txts += txt.split()
@@ -87,25 +86,25 @@ class SynthTextDataFetcher():
     def fetch_record(self, image_idx):
         image_path = self.get_image_path(image_idx)
         if not (util.io.exists(image_path)):
-            return None;
+            return None
         img = util.img.imread(image_path)
-        h, w = img.shape[0:-1];
+        h, w = img.shape[0:-1]
         num_words = self.get_num_words(image_idx)
         rect_bboxes = []
         full_bboxes = []
         txts = []
-        for word_idx in xrange(num_words):
-            xys = self.get_word_bbox(image_idx, word_idx);       
+        for word_idx in range(num_words):
+            xys = self.get_word_bbox(image_idx, word_idx)       
             is_valid, min_x, min_y, max_x, max_y, xys = self.normalize_bbox(xys, width = w, height = h)
             if not is_valid:
-                continue;
+                continue
             rect_bboxes.append([min_x, min_y, max_x, max_y])
             xys = np.reshape(np.transpose(xys), -1)
-            full_bboxes.append(xys);
-            txt = self.get_txt(image_idx, word_idx);
-            txts.append(txt);
+            full_bboxes.append(xys)
+            txt = self.get_txt(image_idx, word_idx)
+            txts.append(txt)
         if len(rect_bboxes) == 0:
-            return None;
+            return None
         
         return image_path, img, txts, rect_bboxes, full_bboxes
     
@@ -118,32 +117,32 @@ def cvt_to_tfrecords(output_path , data_path, gt_path, records_per_file = 50000)
     image_idx = -1
     while image_idx < fetcher.num_images:
         with tf.python_io.TFRecordWriter(output_path%(fid)) as tfrecord_writer:
-            record_count = 0;
+            record_count = 0
             while record_count != records_per_file:
-                image_idx += 1;
+                image_idx += 1
                 if image_idx >= fetcher.num_images:
-                    break;
-                print "loading image %d/%d"%(image_idx + 1, fetcher.num_images)
-                record = fetcher.fetch_record(image_idx);
+                    break
+                print("loading image %d/%d"%(image_idx + 1, fetcher.num_images))
+                record = fetcher.fetch_record(image_idx)
                 if record is None:
-                    print '\nimage %d does not exist'%(image_idx + 1)
-                    continue;
+                    print('\nimage %d does not exist'%(image_idx + 1))
+                    continue
 
-                image_path, image, txts, rect_bboxes, oriented_bboxes = record;
-                labels = len(rect_bboxes) * [1];
-                ignored = len(rect_bboxes) * [0];
+                image_path, image, txts, rect_bboxes, oriented_bboxes = record
+                labels = len(rect_bboxes) * [1]
+                ignored = len(rect_bboxes) * [0]
                 image_data = tf.gfile.FastGFile(image_path, 'r').read()
                 shape = image.shape
                 image_name = str(util.io.get_filename(image_path).split('.')[0])
                 example = convert_to_example(image_data, image_name, labels, ignored, txts, rect_bboxes, oriented_bboxes, shape)
                 tfrecord_writer.write(example.SerializeToString())
-                record_count += 1;
+                record_count += 1
                 
-        fid += 1;            
+        fid += 1            
                     
 if __name__ == "__main__":
     mat_path = util.io.get_absolute_path('~/dataset/SynthText/gt.mat')
     root_path = util.io.get_absolute_path('~/dataset/SynthText/')
     output_dir = util.io.get_absolute_path('~/dataset/SSD-tf/SynthText/')
-    util.io.mkdir(output_dir);
+    util.io.mkdir(output_dir)
     cvt_to_tfrecords(output_path = util.io.join_path(output_dir,  'SynthText_%d.tfrecord'), data_path = root_path, gt_path = mat_path)

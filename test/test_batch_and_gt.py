@@ -27,13 +27,13 @@ tf.app.flags.DEFINE_integer(
 # Dataset Flags.
 # =========================================================================== #
 tf.app.flags.DEFINE_string(
-    'dataset_name', 'synthtext', 'The name of the dataset to load.')
+    'dataset_name', 'icdar2015', 'The name of the dataset to load.')
 tf.app.flags.DEFINE_integer(
     'num_classes', 2, 'Number of classes to use in the dataset.')
 tf.app.flags.DEFINE_string(
     'dataset_split_name', 'train', 'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
-    'dataset_dir', util.io.get_absolute_path('~/dataset/SSD-tf/SynthText'),
+    'dataset_dir', '/home/eugene/_DATASETS/scene_text/icdar_2015',
     'The directory where the dataset files are stored.')
 tf.app.flags.DEFINE_string(
     'model_name', 'seglink_vgg', 'The name of the architecture to train.')
@@ -61,7 +61,7 @@ def config_initialization():
 
     config.init_config(image_shape, batch_size=FLAGS.batch_size)
 
-    util.proc.set_proc_name(FLAGS.model_name + '_' + FLAGS.dataset_name)
+    # util.proc.set_proc_name(FLAGS.model_name + '_' + FLAGS.dataset_name)
 
     dataset = dataset_factory.get_dataset(FLAGS.dataset_name, FLAGS.dataset_split_name, FLAGS.dataset_dir)
     #     config.print_config(FLAGS, dataset)
@@ -110,7 +110,7 @@ def create_dataset_batch_queue(dataset):
         # batch them
         b_image, b_seg_label, b_seg_offsets, b_link_label = tf.train.batch(
             [image, seg_label, seg_offsets, link_label],
-            batch_size=config.batch_size_per_gpu,
+            batch_size=batch_size,
             num_threads=FLAGS.num_preprocessing_threads,
             capacity=50)
 
@@ -125,7 +125,7 @@ def create_dataset_batch_queue(dataset):
 # =========================================================================== #
 def main(_):
     util.init_logger()
-    dump_path = util.io.get_absolute_path('~/temp/no-use/seglink/')
+    dump_path = '/home/eugene/_DATASETS/scene_text/icdar_2015/not_used'
 
     dataset = config_initialization()
     batch_queue = create_dataset_batch_queue(dataset)

@@ -86,7 +86,7 @@ class SegLinkNet(object):
         batch_size, h, w = tensor_shape(net)[:-1]
 
         if layer_name == 'conv4_3':
-            net = tf.nn.l2_normalize(net, -1) * 20
+            net = tf.nn.l2_normalize(net, -1) * 20  # TODO: WHY THE FUCK * 20?
 
         with slim.arg_scope([slim.conv2d],
                             activation_fn=None,

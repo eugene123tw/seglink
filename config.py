@@ -131,7 +131,7 @@ def init_config(image_shape, batch_size = 1,
     _set_batch_size(batch_size)
     
     global batch_size_per_gpu
-    batch_size_per_gpu = batch_size / num_clones
+    batch_size_per_gpu = batch_size // num_clones
     if batch_size_per_gpu < 1:
         raise ValueError('Invalid batch_size [=%d], resulting in 0 images per gpu.'%(batch_size))
     
